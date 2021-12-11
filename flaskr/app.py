@@ -1,17 +1,26 @@
 from flask import Flask, request
 import boto3
 import datetime
-import json
+from slack_sdk.webhook import WebhookClient
+from tabulate import tabulate
 
 app = Flask(__name__)
+webhook_url = ""
+
+def send_incoming_webhook(message):
+    webhook = WebhookClient(webhook_url)
+    response = webhook.send(text=message)
+    assert response.status_code == 200
+    assert response.body == "ok"
 
 @app.route("/")
-def hello_world():
+def hello():
     return "<p>Hello, World!</p>"
 
 @app.route('/check', methods=['GET'])
 def check():
-    old_standard = 20
+    #old_standard = int(request.args.get('hour', 0))
+    old_standard = 4200
 
     # Create IAM client
     client = boto3.client('iam')
@@ -31,17 +40,10 @@ def check():
             print(user, key['AccessKeyId'], key_create_date, diff_hours, is_old)
             send_list.append([user, key['AccessKeyId'], key_create_date, diff_hours, is_old]) if is_old else None
 
-    return str(send_list)
+    return tabulate(send_list, tablefmt='html')
 
 @app.route('/hour', methods=['GET'])
 # https://velog.io/@devmin/python-flask-request-validator
 def list():
     hour = request.args.get('hour', 0)
-    #print(f'hour={hour}')
     return f'hour={hour}'
-
-# @app.route('/list', methods=['GET'])
-# def list():
-#     client = boto3.client('iam')
-#     response = client.list_users()
-#     return str(response['Users'])
