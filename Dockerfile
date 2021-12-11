@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.9
 
 # set a directory for the app
 WORKDIR /app
@@ -7,14 +7,8 @@ WORKDIR /app
 COPY flaskr flaskr
 COPY requirements.txt requirements.txt
 
-RUN ls -al
-
 # install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-RUN flask --help
-
-RUN flask --help
 
 # tell the port number the container should expose
 EXPOSE 5000
