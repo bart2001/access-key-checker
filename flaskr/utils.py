@@ -6,26 +6,19 @@ def get_passed_hours(date1: datetime.datetime, date2: datetime.datetime) -> floa
     diff_hours = diff.total_seconds() / 60 / 60
     return diff_hours
 
-def convert_to_positive_int(numstr: str) -> int:
-    try:
-        number = int(numstr)
-        return number if number > 0 else 0
-    except ValueError:
-        return 0
+def check_positive_int(numstr: str) -> bool:
+    if numstr.isdigit() and int(numstr) > 0:
+        return True
+    else:
+        return False
 
-def create_success_json_response(data):
+
+def create_json_response(is_successful, result_code, result_msg, data):
     return json.dumps({
         "header": {
-            "isSuccessful": True,
-            "resultMessage": "Success"
+            "isSuccessful": is_successful,
+            "resultMessage": result_msg,
+            "resultCode": result_code,
         },
-        "data":  data
-    })
-
-def create_error_json_response(message):
-    return json.dumps({
-        "header": {
-            "isSuccessful": False,
-            "resultMessage": message
-        }
+        "data": data
     })

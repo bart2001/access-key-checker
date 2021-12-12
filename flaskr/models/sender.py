@@ -15,8 +15,13 @@ class SlackWebhookSender:
     def send_old_keys_webhook(self, passed_hours, old_keys):
         message = f"These keys has passed {str(passed_hours)} hours since creation\n"
         message += '\n'.join([str(k) for k in old_keys])
-        response = self.client.send(
-             text=message,
-        )
-        assert response.status_code == 200
-        assert response.body == "ok"
+        try:
+            response = self.client.send(
+                 text=message,
+            )
+            logger.info(f"slack webhook response={str(response)}")
+            assert response.status_code == 200
+            assert response.body == "ok"
+        except Exception as e:
+            logger.error(f"slack send webhook error={str(e)}")
+        return "Sending webhook message failed"

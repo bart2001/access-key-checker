@@ -14,8 +14,8 @@ python >= 3
 GET /
 ```
 - response
-```
-Hello, Access Key Checker!
+```bash
+{"header": {"isSuccessful": true, "resultMessage": "Hello Access Key Checker!", "resultCode": 0}, "data": []}
 ```
 ### check
 hour 파라미터를 기준으로 현재를 기준으로 N시간이 지난 Access Key를 전부 찾고 Slack으로 발송한 후에 응답으로 표시
@@ -27,9 +27,10 @@ GET /check?hour=${hour}
 - response
 ```bash
 {
-  "header": {"isSuccessful": "성공/실패여부", "resultMessage": "Success or Fail Message"},
+  "header": {"isSuccessful": "성공/실패여부", "resultMessage": "성공/실패메세지", , "resultCode": "결과코드"},
   "data": ["hour(N) 시간 Access Key 리스트"]
 }
+# 결과코드: 0(성공), -1(실패)
 ```
 
 ## Development Running
@@ -44,6 +45,11 @@ flask run --host=0.0.0.0
 # curl localhost:5000  
 ```
 
+## Running Test
+```bash
+pytest
+```
+
 ## Build & Push Container
 ```bash
 # Login into prive
@@ -55,6 +61,7 @@ docker push ${TAG}
 
 ## Running in docker
 ```bash
+# copy sample docker-compose.yml
 cp docker-compose.sample.yml docker-compose.yml
 # set ${IMAGE}, ${AWS_ACCESS_KEY_ID}, ${AWS_SECRET_ACCESS_KEY}, ${SLACK_WEBHOOK_URL} in docker-compose.yml
 docker-compose up -d
@@ -62,6 +69,7 @@ docker-compose up -d
 
 ## Running in Kubernetes
 ```bash
+# copy sample manifest.yaml
 cp manifest.sample.yaml manifest.yaml
 # set ${IMAGE}, ${AWS_ACCESS_KEY_ID}, ${AWS_SECRET_ACCESS_KEY}, ${SLACK_WEBHOOK_URL} in manifest.yaml 
 kubectl apply -f manifest.yaml
