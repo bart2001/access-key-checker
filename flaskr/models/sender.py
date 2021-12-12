@@ -19,9 +19,10 @@ class SlackWebhookSender:
             response = self.client.send(
                  text=message,
             )
-            logger.info(f"slack webhook response={str(response)}")
+            logger.info(f"response.status_code={response.status_code}, response.body={response.body}")
             assert response.status_code == 200
             assert response.body == "ok"
         except Exception as e:
             logger.error(f"slack send webhook error={str(e)}")
-        return "Sending webhook message failed"
+            return "Sending webhook message failed"
+        return ""
