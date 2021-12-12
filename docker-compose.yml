@@ -1,9 +1,0 @@
-version: "3.8"
-services:
-  checker:
-    image: bart2001/access-key-checker:v0.0.0
-    ports:
-      - "5000:5000"
-    command: ["flask", "run", "--host=0.0.0.0"]
-    environment:
-      - FLASK_APP=/app/flaskr/app.py
