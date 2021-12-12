@@ -74,8 +74,6 @@ pytest
 
 ## Build & Push Container
 ```bash
-# Login into prive
-docker login
 # Set ${TAG}
 DOCKER_BUILDKIT=0 docker build -t ${TAG} .
 docker push ${TAG}
