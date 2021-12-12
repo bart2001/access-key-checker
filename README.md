@@ -2,8 +2,8 @@
 입력된 시간보다 오래된 AWS IAM Access Key를 찾아서 Slack 웹훅으로 전송해주는 어플리케이션
 
 ## Requirements (local)
-```bash
-python >= 3
+``
+python >= 3.9
 ```
 
 ## API Requests & Responses
@@ -33,7 +33,7 @@ GET /check?hour=${hour}
 # 결과코드: 0(성공), -1(실패)
 ```
 
-## Development Running
+## Running in Local (Development)
 ```bash
 pip install -r requirement.txt
 export AWS_SECRET_ACCESS_KEY=${NEED_TO_SET_UP}
@@ -59,7 +59,7 @@ DOCKER_BUILDKIT=0 docker build -t ${TAG} .
 docker push ${TAG}
 ```
 
-## Running in docker
+## Running in Docker
 ```bash
 # copy sample docker-compose.yml
 cp docker-compose.sample.yml docker-compose.yml

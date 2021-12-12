@@ -1,5 +1,5 @@
 from flask import Flask, request, redirect, url_for
-import logging, json
+import logging
 from . import conf, utils
 from .models.iam import IAMclient
 from .models.sender import SlackWebhookSender
@@ -38,12 +38,16 @@ def check():
 
     # get all old keys by usernames and hour parameter
     old_keys, failmsg = client.get_old_access_keys_by_usernames(usernames, hour)
+    # response failmsg if failed to get get_old_access_keys_by_usernames failed
     if not old_keys and failmsg:
-        return utils.create_json_response(False, -1, failmsg, [])
+       return utils.create_json_response(False, -1, failmsg, [])
+    # response with success if no old keys found
+    if not old_keys:
+        return utils.create_json_response(True, 0, "No old keys to send", old_keys)
 
     # send webhook slack message
     sender = SlackWebhookSender()
-    errmsg = sender.send_old_keys_webhook(hour, old_keys)
+    errmsg = sender.send_old_keys_webhook(hour, old_keys) if len(old_keys) else None
     if errmsg:
         return utils.create_json_response(False, -1, errmsg, old_keys)
 
