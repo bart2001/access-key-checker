@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, redirect, url_for
 import logging, json
 from . import conf, utils
 from .models.iam import IAMclient
@@ -8,6 +8,7 @@ app = Flask(__name__)
 
 logger = logging.getLogger(__name__)
 logger = conf.set_log_config(logger)
+
 
 @app.route("/")
 def hello():
@@ -46,8 +47,6 @@ def check():
     return utils.create_success_json_response(old_keys)
 
 
-@app.route('/send', methods=['GET'])
-def send():
-    sender = SlackWebhookSender()
-    sender.send_old_keys_webhook(1, [1,2,5])
-    return "sucess"
+@app.errorhandler(404)
+def page_not_found(error):
+    return redirect(url_for('hello'))

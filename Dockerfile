@@ -10,10 +10,9 @@ COPY requirements.txt requirements.txt
 # install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# tell the port number the container should expose
-EXPOSE 5000
 
-ENV FLASK_APP=/app/flaskr/app.py
+ENV FLASK_APP="/app/flaskr/app"
+ENV FLASK_ENV="production"
 
 # run the command
-CMD ["flask", "run", "--host=0.0.0.0"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=8080"]

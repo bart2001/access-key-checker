@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: access-key-checker-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: access-key-checker
+  template:
+    metadata:
+      labels:
+        app: access-key-checker
+    spec:
+      containers:
+      - image: ${IMAGE}
+        name: access-key-checker
+        command: ["flask", "run", "--host=0.0.0.0", "--port=8080"]
+        ports:
+            - containerPort: 8080
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          value: ${AWS_ACCESS_KEY_ID}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: ${AWS_SECRET_ACCESS_KEY}
+        - name: SLACK_WEBHOOK_URL
+          value: ${SLACK_WEBHOOK_URL}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: access-key-checker-service
+spec:
+  selector:
+    app: access-key-checker
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
