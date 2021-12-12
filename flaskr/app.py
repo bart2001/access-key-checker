@@ -1,49 +1,53 @@
 from flask import Flask, request
-import boto3
-import datetime
-from slack_sdk.webhook import WebhookClient
-from tabulate import tabulate
+import logging, json
+from . import conf, utils
+from .models.iam import IAMclient
+from .models.sender import SlackWebhookSender
 
 app = Flask(__name__)
-webhook_url = ""
 
-def send_incoming_webhook(message):
-    webhook = WebhookClient(webhook_url)
-    response = webhook.send(text=message)
-    assert response.status_code == 200
-    assert response.body == "ok"
+logger = logging.getLogger(__name__)
+logger = conf.set_log_config(logger)
 
 @app.route("/")
 def hello():
-    return "<p>Hello, World!</p>"
+    logger.info("hello access-key-checker")
+    return "<p>Hello, Access Key Checker!</p>"
+
 
 @app.route('/check', methods=['GET'])
 def check():
-    #old_standard = int(request.args.get('hour', 0))
-    old_standard = 4200
-
-    # Create IAM client
-    client = boto3.client('iam')
-    user_response = client.list_users()
-    users = [a['UserName'] for a in user_response.get('Users', [])]
-    utcnow = datetime.datetime.now().replace(tzinfo=datetime.timezone.utc)
-
-    send_list = []
-    for user in users:
-        key_response = client.list_access_keys(UserName=user)
-        for key in key_response.get('AccessKeyMetadata', []):
-            print('----------------')
-            key_create_date = key['CreateDate'].replace(tzinfo=datetime.timezone.utc)
-            diff = utcnow - key_create_date
-            diff_hours = diff.total_seconds() / 60 / 60
-            is_old = True if diff_hours > old_standard else False
-            print(user, key['AccessKeyId'], key_create_date, diff_hours, is_old)
-            send_list.append([user, key['AccessKeyId'], key_create_date, diff_hours, is_old]) if is_old else None
-
-    return tabulate(send_list, tablefmt='html')
-
-@app.route('/hour', methods=['GET'])
-# https://velog.io/@devmin/python-flask-request-validator
-def list():
     hour = request.args.get('hour', 0)
-    return f'hour={hour}'
+    hour = utils.convert_to_positive_int(hour)
+    if hour == 0:
+        return utils.create_error_json_response("Invalid parameter: hour should be greater than 0")
+
+    # create client
+    client = None
+    try:
+        client = IAMclient()
+    except Exception as e:
+        logger.error(f"error={str(e)}")
+        return utils.create_error_json_response("Invalid credential key")
+
+    # get all usernames
+    usernames, failmsg = client.get_all_usernames()
+    if not usernames and failmsg:
+        return utils.create_error_json_response(failmsg)
+
+    # get all old keys by usernames and hour parameter
+    old_keys, failmsg = client.get_old_access_keys_by_usernames(usernames, hour)
+    if not old_keys and failmsg:
+        return utils.create_error_json_response(failmsg)
+
+    sender = SlackWebhookSender()
+    sender.send_old_keys_webhook(hour, old_keys)
+
+    return utils.create_success_json_response(old_keys)
+
+
+@app.route('/send', methods=['GET'])
+def send():
+    sender = SlackWebhookSender()
+    sender.send_old_keys_webhook(1, [1,2,5])
+    return "sucess"
