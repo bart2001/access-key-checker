@@ -1,50 +1,56 @@
 import datetime
+import math
 import os
 import boto3
-from ..utils import utils
-# class for iam client
+from .. import utils, conf
+import logging
 
-class IAM:
+DEFAULT_PAGE_SIZE = 100
+
+logger = logging.getLogger(__name__)
+logger = conf.set_log_config(logger)
+
+class IAMclient:
+
     def __init__(self):
         aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', "")
         aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY', "")
-        print(aws_access_key_id, aws_secret_access_key)
-        self.client = boto3.client('iam')
+        self.client = boto3.client(
+            'iam',
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+        )
 
-    def get_all_users(self):
-        response = self.client.list_users()
-        usernames = [a['UserName'] for a in response.get('Users', [])]
-        return usernames
+    def get_all_usernames(self):
+        usernames = []
+        try:
+            paginator = self.client.get_paginator('list_users')
+            page_iterator = paginator.paginate(PaginationConfig={'PageSize': DEFAULT_PAGE_SIZE})
+            for page in page_iterator:
+                usernames.extend([user['UserName'] for user in page['Users']])
+        except Exception as e:
+            logger.error(str(e))
+            return [], "Fail to get usernames"
+        return usernames, ""
 
-    def get_access_keys_by_user(self, username):
-        response = self.client.list_access_keys(UserName=username)
-        keys = response.get('AccessKeyMetadata', [])
-        return keys
-
-    def get_old_access_keys_by_user(self, username, old_standard):
+    def get_old_access_keys_by_usernames(self, usernames, hour):
         old_keys = []
-        utcnow = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
-        response = self.client.list_access_keys(UserName=username)
-        keys = response.get('AccessKeyMetadata', [])
-        for key in keys:
-            key_create_date = key['CreateDate'].replace(tzinfo=datetime.timezone.utc)
-            diff_hours = utils.get_diff_hours(key_create_date, utcnow)
-            key['DiffHours'] = diff_hours
-            if diff_hours > old_standard:
-                old_keys.append(key)
-        return keys
-
-    def get_old_access_keys_by_users(self, usernames, old_standard):
-        all_old_keys = []
         for username in usernames:
-            old_keys = self.get_access_keys_by_user(username, old_standard)
-
-# python -m flaskr.models.iam
-if __name__ == '__main__':
-    iam = IAM()
-    first_user = iam.get_all_users()[0]
-    client = boto3.client('iam')
-    #print(iam.get_all_users())
-    #old_keys = iam.get_old_access_keys_by_user('jonny.koo', 0)
-    #print(old_keys)
-
+            try:
+                paginator = self.client.get_paginator('list_access_keys')
+                for page in paginator.paginate(UserName=username, PaginationConfig={'PageSize': DEFAULT_PAGE_SIZE}):
+                    for user_key in page.get('AccessKeyMetadata', []):
+                        create_date = user_key['CreateDate']
+                        passed_hours = utils.get_passed_hours(create_date.replace(tzinfo=None),
+                                                              datetime.datetime.utcnow().replace(tzinfo=None))
+                        if passed_hours > hour:
+                            old_keys.append({
+                                'UserName': user_key['UserName'],
+                                'AccessKeyId': user_key['AccessKeyId'],
+                                'CreateDate': str(user_key['CreateDate']),
+                                'PassedHours': math.ceil(passed_hours),
+                            })
+            except Exception as e:
+                logger.error(str(e))
+                return [], "Fail to get old access keys"
+        return old_keys, ""
