@@ -1,8 +1,30 @@
 # access-key-checker
 입력된 시간보다 오래된 AWS IAM Access Key를 찾아서 Slack 웹훅으로 전송해주는 어플리케이션
 
+## Project Layout
+```
+├── README.md
+├── Dockerfile # for container build
+├── docker-compose.sample.yml # maifest sample for docker
+├── manifest.sample.yaml # manifest sample for kubernetes
+├── .gitignore
+├── requirements.txt
+├── flaskr
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── app.py # main
+│   ├── conf.py # config helper
+│   ├── models/*.py # IAM Client Class(iam.py), Slack Webhook Client Class(sender.py)
+│   └── utils.py # utils
+└── tests
+    ├── __init__.py
+    ├── test_models.py # test case for models
+    ├── test_request.py # test case for requests
+    └── test_utils.py # test case for utils
+```
+
 ## Requirements (local)
-``
+```
 python >= 3.9
 ```
 
