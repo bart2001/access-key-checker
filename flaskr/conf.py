@@ -1,6 +1,6 @@
 import logging
 
-LOG_FORMATTER = logging.Formatter('[%(asctime)s][%(name)s][%(levelname)s] %(message)s', datefmt='%Y-%m-%d:%H:%M:%S')
+LOG_FORMATTER = logging.Formatter('[%(asctime)s][%(levelname)s][%(name)s][%(funcName)s] %(message)s', datefmt='%Y-%m-%d:%H:%M:%S')
 
 def set_log_config(logger):
     logger.setLevel(logging.INFO)

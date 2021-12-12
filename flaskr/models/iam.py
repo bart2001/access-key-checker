@@ -29,20 +29,23 @@ class IAMclient:
             for page in page_iterator:
                 usernames.extend([user['UserName'] for user in page['Users']])
         except Exception as e:
-            logger.error(str(e))
+            logger.error(f"Fail to get usernames: {str(e)}")
             return [], "Fail to get usernames"
         return usernames, ""
 
     def get_old_access_keys_by_usernames(self, usernames, hour):
         old_keys = []
+        failmsg = ""
+        logger.info(f'usernames={usernames}')
+        paginator = self.client.get_paginator('list_access_keys')
         for username in usernames:
             try:
-                paginator = self.client.get_paginator('list_access_keys')
                 for page in paginator.paginate(UserName=username, PaginationConfig={'PageSize': DEFAULT_PAGE_SIZE}):
                     for user_key in page.get('AccessKeyMetadata', []):
                         create_date = user_key['CreateDate']
                         passed_hours = utils.get_passed_hours(create_date.replace(tzinfo=None),
                                                               datetime.datetime.utcnow().replace(tzinfo=None))
+                        logger.debug(f"passed_hours={passed_hours}, hour={hour}")
                         if passed_hours > hour:
                             old_keys.append({
                                 'UserName': user_key['UserName'],
@@ -51,6 +54,6 @@ class IAMclient:
                                 'PassedHours': math.ceil(passed_hours),
                             })
             except Exception as e:
+                failmsg = "Fail to get some user access keys"
                 logger.error(str(e))
-                return [], "Fail to get old access keys"
-        return old_keys, ""
+        return old_keys, failmsg
